@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MINES HUB - Professional Betting Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap');
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Kanit', sans-serif; }
+        body { background: #0b0e11; color: white; margin: 0; padding: 0; overflow-x: hidden; width: 100%; }
+
+        /* --- Global Header --- */
+        .navbar { background-color: #1a1d23; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 1000; }
+        .brand-name { color: #ff9800; font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; }
+        .balance-box { background: rgba(76, 175, 80, 0.1); padding: 6px 15px; border-radius: 50px; border: 1px solid #4caf50; color: #4caf50; font-weight: 600; font-size: 0.95rem; }
+        
+        /* --- Lobby Styles --- */
+        .sub-nav-container { width: 100%; padding: 10px 0; border-bottom: 1px solid #1a1d23; }
+        .sub-nav { display: flex; overflow-x: auto; padding: 0 15px; gap: 10px; scrollbar-width: none; }
+        .sub-nav::-webkit-scrollbar { display: none; }
+        .nav-item { flex: 0 0 auto; color: #8a94a6; padding: 10px 20px; cursor: pointer; border-radius: 12px; background: #1a1d23; font-size: 0.85rem; transition: 0.2s; }
+        .nav-item.active { background-color: #1f6feb; color: white; }
+
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; }
+        .game-card { background-color: #1a1d23; border-radius: 15px; overflow: hidden; border: 1px solid #30363d; position: relative; }
+        .game-img { width: 100%; aspect-ratio: 0.85/1; background: #16191d; display: flex; align-items: center; justify-content: center; position: relative; }
+        .game-img img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .tag-hot { position: absolute; top: 10px; left: 10px; background: #f44336; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; z-index: 2; box-shadow: 0 0 10px rgba(244,67,54,0.5); }
+        .tag-wait { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: #8a94a6; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
+        
+        /* YouTube Style Loader */
+        .loader { width: 35px; height: 35px; border: 3px solid #3d4452; border-top: 3px solid #1f6feb; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .game-info { padding: 10px; text-align: center; }
+        .btn-play { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; background: #2d333f; color: #5c6577; }
+        .btn-active { background: #ff9800 !important; color: black !important; }
+
+        /* --- Mines Game Layout (Your Code Integrated) --- */
+        #gameView { display: none; padding-bottom: 50px; }
+        .mines-container { display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        #grid { display: grid; gap: 8px; background: #151921; padding: 12px; border-radius: 20px; width: 100%; max-width: 350px; margin-top: 10px; }
+        .cell { aspect-ratio: 1/1; background: #2d333f; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3); }
+        .cell.reveal-diamond { background: linear-gradient(145deg, #388e3c, #4caf50); border: 1px solid #66bb6a; box-shadow: none; }
+        .cell.reveal-bomb { background: linear-gradient(145deg, #b71c1c, #f44336); border: 1px solid #ef5350; box-shadow: none; }
+        
+        .footer-controls { background: #1a1d23; padding: 20px; border-radius: 30px 30px 0 0; width: 100%; max-width: 500px; margin: 0 auto; margin-top: 20px; }
+        .mode-row { display: flex; background: #0f1216; padding: 4px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #3d4452; }
+        .mode-btn { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 0.8rem; color: #8a94a6; cursor: pointer; }
+        .mode-btn.active { background: #3d4452; color: white; font-weight: bold; }
+        
+        .btn-action { width: 100%; padding: 16px; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        
+        /* Modals */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+        .modal { background: #1a1d23; width: 100%; max-width: 350px; padding: 30px; border-radius: 25px; border: 1px solid #3d4452; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="brand-name" onclick="showLobby()">MINES HUB</div>
+        <div class="user-controls" style="display:flex; gap:10px; align-items: center;">
+            <div class="balance-box">💰 <span id="balanceDisp">1,000.00</span></div>
+            <button onclick="toggleOverlay('depositModal', true)" style="background:#4caf50; border:none; padding:8px 12px; border-radius:8px; color:white; font-weight:bold;">ฝาก</button>
+            <button onclick="toggleOverlay('withdrawModal', true)" style="background:#ff9800; border:none; padding:8px 12px; border-radius:8px; color:black; font-weight:bold;">ถอน</button>
+        </div>
+    </div>
+
+    <div id="lobbyView">
+        <div class="sub-nav-container">
+            <div class="sub-nav">
+                <div class="nav-item" onclick="changeCat('สล็อต', 1, this)">🎰 สล็อต</div>
+                <div class="nav-item" onclick="changeCat('คาสิโน', 2, this)">💎 คาสิโน</div>
+                <div class="nav-item" onclick="changeCat('กีฬา', 3, this)">⚽ กีฬา</div>
+                <div class="nav-item active" onclick="changeCat('มินิเกม', 6, this)">🎮 มินิเกม</div>
+            </div>
+        </div>
+        <div class="game-grid" id="gameGrid"></div>
+    </div>
+
+    <div id="gameView">
+        <div class="mines-container">
+            <div style="display:flex; justify-content: space-between; width:100%; max-width:350px;">
+                <button onclick="showLobby()" style="background:none; border:1px solid #8a94a6; color:#8a94a6; padding:5px 15px; border-radius:8px;">⬅ ออก</button>
+                <div id="multDisplay" style="color:#ff9800; font-weight:bold; font-size:1.2rem;">x1.00</div>
+            </div>
+            <div id="grid"></div>
+            
+            <div class="footer-controls">
+                <div class="mode-row">
+                    <div class="mode-btn" id="m3" onclick="setGridSize(3)">3 x 3</div>
+                    <div class="mode-btn active" id="m5" onclick="setGridSize(5)">5 x 5</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="position:relative;">
+                        <input type="number" id="betInput" style="width:100%; background:#0f1216; border:1px solid #3d4452; padding:12px; border-radius:10px; color:white; text-align:center;" value="10">
+                        <span onclick="setMax()" style="position:absolute; right:10px; top:12px; color:#4caf50; font-size:0.7rem; font-weight:bold; cursor:pointer;">MAX</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#8a94a6;">
+                        <span>ระเบิด: <b id="mineLabel" style="color:#ff9800">3</b></span>
+                    </div>
+                    <input type="range" id="mineSlider" min="1" max="24" value="3" oninput="updateMinesUI()" style="width:100%;">
+                    
+                    <button id="startBtn" class="btn-action" style="background:#ff9800; color:black;" onclick="beginGame()">START GAME</button>
+                    <button id="cashBtn" class="btn-action" style="background:#4caf50; color:white; display:none;" onclick="claimWin()">CASHOUT (x1.00)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="depositModal">
+        <div class="modal">
+            <h3 style="color:#ff9800">ฝากเงินผ่านธนาคาร</h3>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0;">
+                <div style="background:#006739; padding:10px; border-radius:8px; font-size:0.6rem;">K-BANK</div>
+                <div style="background:#4e2e7f; padding:10px; border-radius:8px; font-size:0.6rem;">SCB</div>
+                <div style="background:#ff5800; padding:10px; border-radius:8px; font-size:0.6rem;">TMW</div>
+            </div>
+            <button class="btn-action" style="background:#3d4452; color:white;" onclick="toggleOverlay('depositModal', false)">ย้อนกลับ</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="withdrawModal">
+        <div class="modal">
+            <h3 style="color:#ff9800">ถอนเงิน</h3>
+            <input type="number" placeholder="100.00" style="width:100%; background:#0f1216; border:1px solid #3d4452; padding:15px; border-radius:12px; color:white; text-align:center; font-size:1.5rem;">
+            <p style="font-size:0.75rem; color:#8a94a6; margin:15px 0;">ขั้นต่ำ 100 / สูงสุด 200,000<br>ถอนได้สูงสุด 10 ครั้ง/วัน</p>
+            <button class="btn-action" style="background:#ff9800; color:black;">ยืนยันการถอน</button>
+            <button class="btn-action" style="background:none; color:#8a94a6; border:1px solid #3d4452;" onclick="toggleOverlay('withdrawModal', false)">ยกเลิก</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="resultModal">
+        <div class="modal">
+            <h2 id="resTitle" style="margin:0"></h2>
+            <p id="resDesc" style="margin:15px 0;"></p>
+            <button class="btn-action" style="background:#4caf50; color:white;" onclick="toggleOverlay('resultModal', false)">ตกลง</button>
+        </div>
+    </div>
+
+    <script>
+        let balance = 1000.00, gSize = 5, isLive = false, mines = [], openCount = 0, betAmount = 0, currentX = 1.0;
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+
+        function sfx(t) {
+            const o = audio.createOscillator(); const g = audio.createGain(); o.connect(g); g.connect(audio.destination);
+            if(t==='d'){ o.type='sine'; o.frequency.setValueAtTime(400+(openCount*80), audio.currentTime); g.gain.setValueAtTime(0.1, audio.currentTime); o.start(); o.stop(audio.currentTime+0.2); }
+            else if(t==='b'){ o.type='sawtooth'; o.frequency.setValueAtTime(80, audio.currentTime); g.gain.setValueAtTime(0.2, audio.currentTime); o.start(); o.stop(audio.currentTime+0.5); }
+        }
+
+        // --- Lobby System ---
+        function changeCat(name, pref, el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            const grid = document.getElementById('gameGrid'); grid.innerHTML = '';
+            for(let i=1; i<=12; i++) {
+                const isMines = (name === 'มินิเกม' && i === 1);
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <div class="game-img">
+                        ${isMines ? `<span class="tag-hot">มาแรง 🔥</span><img src="https://i.ibb.co/5hnhsx1V/mines-cover.png">` : `<span class="tag-wait">ปิดปรับปรุง</span><div class="loader"></div>`}
+                    </div>
+                    <div class="game-info">
+                        <span style="font-size:0.9rem; font-weight:800; color:${isMines?'#ff9800':'white'}">${isMines?'MINES':name+' '+pref+'.'+i}</span>
+                        <button class="btn-play ${isMines?'btn-active':''}" onclick="${isMines?'enterGame()':''}">
+                            ${isMines?'กดเข้าเกม':'รอระบบ...'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function enterGame() { document.getElementById('lobbyView').style.display='none'; document.getElementById('gameView').style.display='block'; drawGrid(); }
+        function showLobby() { document.getElementById('lobbyView').style.display='block'; document.getElementById('gameView').style.display='none'; }
+        function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+        function setMax() { document.getElementById('betInput').value = balance.toFixed(2); }
+        function updateMinesUI() { document.getElementById('mineLabel').innerText = document.getElementById('mineSlider').value; }
+
+        // --- Integrated Mines Engine ---
+        function setGridSize(s) { if(isLive) return; gSize = s; document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); document.getElementById('m'+s).classList.add('active'); const slider = document.getElementById('mineSlider'); slider.max = (s*s)-1; drawGrid(); }
+        
+        function drawGrid() {
+            const g = document.getElementById('grid'); g.innerHTML = ''; g.style.gridTemplateColumns = `repeat(${gSize}, 1fr)`;
+            for(let i=0; i<gSize*gSize; i++) { const c = document.createElement('div'); c.className = 'cell'; g.appendChild(c); }
+        }
+
+        function combinations(n, r) { if (r<0 || r>n) return 0; if (r===0 || r===n) return 1; if (r>n/2) r=n-r; let res=1; for (let i=1; i<=r; i++) res = res*(n-i+1)/i; return res; }
+        
+        function beginGame() {
+            const b = parseFloat(document.getElementById('betInput').value);
+            const m = parseInt(document.getElementById('mineSlider').value);
+            if(b > balance || b <= 0) return alert("ยอดเงินไม่พอ");
+            balance -= b; betAmount = b; updateBalance();
+            isLive = true; openCount = 0; mines = []; currentX = 1.0;
+            while(mines.length < m) { let r = Math.floor(Math.random()*(gSize*gSize)); if(!mines.includes(r)) mines.push(r); }
+            const g = document.getElementById('grid'); g.innerHTML = '';
+            for(let i=0; i<gSize*gSize; i++) {
+                const c = document.createElement('div'); c.className = 'cell';
+                c.onclick = () => {
+                    if(!isLive || c.classList.contains('disabled')) return;
+                    if(mines.includes(i)) {
+                        sfx('b'); c.innerHTML = '💣'; c.classList.add('reveal-bomb');
+                        popResult("BOOM!", "เสีย: " + betAmount.toFixed(2) + " ฿", "#f44336"); endPlay();
+                    } else {
+                        openCount++; sfx('d'); c.innerHTML = '💎'; c.classList.add('reveal-diamond', 'disabled');
+                        let prob = combinations((gSize*gSize)-m, openCount) / combinations(gSize*gSize, openCount);
+                        currentX = (1 / prob) * 0.95;
+                        if(gSize===3 && m===3 && openCount===6) currentX = 36.00; // ล็อค x36 ตามโจทย์
+                        document.getElementById('cashBtn').innerText = `ถอนเงิน (x${currentX.toFixed(2)})`;
+                        document.getElementById('multDisplay').innerText = `x${currentX.toFixed(2)}`;
+                        if(openCount === (gSize*gSize - m)) claimWin();
+                    }
+                };
+                g.appendChild(c);
+            }
+            document.getElementById('startBtn').style.display='none'; document.getElementById('cashBtn').style.display='block';
+        }
+
+        function claimWin() {
+            if(!isLive) return; let win = betAmount * currentX; balance += win;
+            popResult("WINNER!", `ได้รับ: ${win.toFixed(2)} ฿ <br> (x${currentX.toFixed(2)})`, "#4caf50"); endPlay();
+        }
+
+        function endPlay() { isLive = false; document.getElementById('startBtn').style.display='block'; document.getElementById('cashBtn').style.display='none'; document.querySelectorAll('.cell').forEach((c,i)=>{ if(mines.includes(i)) c.innerHTML='💣'; }); updateBalance(); }
+        function updateBalance() { const bStr = balance.toLocaleString(undefined, {minimumFractionDigits: 2}); document.getElementById('balanceDisp').innerText = bStr; }
+        function popResult(t, d, c) { document.getElementById('resTitle').innerText=t; document.getElementById('resTitle').style.color=c; document.getElementById('resDesc').innerHTML=d; toggleOverlay('resultModal', true); }
+
+        window.onload = () => changeCat('มินิเกม', 6, document.querySelector('.nav-item:last-child'));
+    </script>
+</body>
+</html>
